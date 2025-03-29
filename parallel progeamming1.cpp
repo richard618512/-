@@ -1,63 +1,55 @@
+#include <windows.h>  // Windows API è®¡æ—¶
 #include <iostream>
-#include <windows.h>
-#include <stdlib.h>
-#include <immintrin.h>  // SIMD Ö¸Áî¼¯
-#include <omp.h>        // OpenMP ²¢ĞĞ¼ÆËã
+
 using namespace std;
 
 const int n = 10000;
 int a[n][n], b[n], sum[n];
 
 int main() {
-    long long head, tail, freq;
-    
-    // ³õÊ¼»¯¾ØÕó a ºÍÏòÁ¿ b
+    LARGE_INTEGER head, tail, freq;
+
+    // åˆå§‹åŒ–çŸ©é˜µ a å’Œå‘é‡ b
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
-            a[i][j] = i + j;
+            a[i][j] = i + j;  // è¡Œä¼˜å…ˆå­˜å‚¨ï¼Œæé«˜ Cache å‘½ä¸­ç‡
         }
-        b[i] = i;  // ¼òµ¥³õÊ¼»¯
+        b[i] = i;
     }
 
     int gap = 100;
     for (int k = 100; k <= n; k += gap) {
-        // ÖØÖÃ sum Êı×é
+        // é‡ç½® sum æ•°ç»„
         for (int i = 0; i < k; i++) {
             sum[i] = 0;
         }
 
-        QueryPerformanceFrequency((LARGE_INTEGER*)&freq);
-        QueryPerformanceCounter((LARGE_INTEGER*)&head);
+        QueryPerformanceFrequency(&freq);
+        QueryPerformanceCounter(&head);
 
-        // ²¢ĞĞ¼ÆËã¾ØÕó-ÏòÁ¿³Ë·¨
-        #pragma omp parallel for
+        // è®¡ç®—çŸ©é˜µ-å‘é‡ä¹˜æ³•ï¼ˆæ— å¤šçº¿ç¨‹ï¼‰
         for (int i = 0; i < k; i++) {
-            __m256i sum_vec = _mm256_setzero_si256();  // ³õÊ¼»¯ SIMD ÏòÁ¿
+            int temp_sum = 0;
             int j = 0;
 
-            // Ê¹ÓÃ AVX2 ½øĞĞ SIMD ¼ÆËã£¬Ã¿´Î´¦Àí 8 ¸öÔªËØ
-            for (; j + 7 < k; j += 8) {
-                __m256i a_vec = _mm256_loadu_si256((__m256i*)&a[j][i]);
-                __m256i b_vec = _mm256_loadu_si256((__m256i*)&b[j]);
-                __m256i prod = _mm256_mullo_epi32(a_vec, b_vec); // SIMD ³Ë·¨
-                sum_vec = _mm256_add_epi32(sum_vec, prod); // SIMD ¼Ó·¨
+            // 4 æ¬¡å¾ªç¯å±•å¼€ï¼ˆUnrolling 4xï¼‰
+            for (; j + 3 < k; j += 4) {
+                temp_sum += a[i][j] * b[j];
+                temp_sum += a[i][j + 1] * b[j + 1];
+                temp_sum += a[i][j + 2] * b[j + 2];
+                temp_sum += a[i][j + 3] * b[j + 3];
             }
 
-            // ½« SIMD ½á¹û´æ»ØÆÕÍ¨±äÁ¿
-            int temp[8];
-            _mm256_storeu_si256((__m256i*)temp, sum_vec);
-            for (int t = 0; t < 8; t++) {
-                sum[i] += temp[t];
-            }
-
-            // ´¦ÀíÊ£ÓàÔªËØ
+            // å¤„ç†å‰©ä½™çš„å…ƒç´ 
             for (; j < k; j++) {
-                sum[i] += a[j][i] * b[j];
+                temp_sum += a[i][j] * b[j];
             }
+
+            sum[i] = temp_sum;
         }
 
-        QueryPerformanceCounter((LARGE_INTEGER*)&tail);
-        cout << "n=" << k << " time: " << (tail - head) * 1000.0 / freq << "ms" << endl;
+        QueryPerformanceCounter(&tail);
+        cout << "n=" << k << " time: " << (tail.QuadPart - head.QuadPart) * 1000.0 / freq.QuadPart << "ms" << endl;
 
         if (k == 1000) gap = 1500;
         if (k == 5500) gap = 4500;
@@ -65,4 +57,3 @@ int main() {
 
     return 0;
 }
-
