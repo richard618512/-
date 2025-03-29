@@ -27,7 +27,7 @@ int main() {
         QueryPerformanceFrequency(&freq);
         QueryPerformanceCounter(&head);
 
-        // 计算矩阵-向量乘法（无多线程）
+        // 计算矩阵-向量乘法
         for (int i = 0; i < k; i++) {
             int temp_sum = 0;
             int j = 0;
