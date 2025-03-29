@@ -1,50 +1,45 @@
 #include <iostream>
 #include <windows.h>
-#include <stdlib.h>
-#include <immintrin.h>  // °üº¬ AVX2 Ö¸Áî¼¯
 
 using namespace std;
 
 const int n = 64;
 int a[n], sum;
 
-void recur_simd(int* a, int n) {
-    if (n == 1) return;
-
+// ä¼˜åŒ–ç‰ˆï¼šå¾ªçŽ¯å±•å¼€ + è¿­ä»£æ–¹å¼
+void optimized_reduce(int *a, int n) {
     while (n > 1) {
-        int half_n = n / 2;
+        int half = n / 2;
         int i = 0;
 
-        // Ê¹ÓÃ AVX2 ½øÐÐ SIMD ¼Ó·¨
-        for (; i + 7 < half_n; i += 8) {
-            __m256i v1 = _mm256_loadu_si256((__m256i*)&a[i]);             // ¼ÓÔØÇ°°ë²¿·Ö
-            __m256i v2 = _mm256_loadu_si256((__m256i*)&a[n - i - 8]);     // ¼ÓÔØºó°ë²¿·Ö
-            __m256i v_sum = _mm256_add_epi32(v1, v2);                     // SIMD ¼Ó·¨
-            _mm256_storeu_si256((__m256i*)&a[i], v_sum);                  // ´æ»Ø½á¹û
+        // **å¾ªçŽ¯å±•å¼€ 4 æ¬¡**
+        for (; i + 3 < half; i += 4) {
+            a[i]     += a[n - i - 1];
+            a[i + 1] += a[n - i - 2];
+            a[i + 2] += a[n - i - 3];
+            a[i + 3] += a[n - i - 4];
         }
-
-        // ´¦ÀíÊ£ÓàµÄÔªËØ
-        for (; i < half_n; i++) {
+        // å¤„ç†å‰©ä½™éƒ¨åˆ†
+        for (; i < half; i++) {
             a[i] += a[n - i - 1];
         }
-
-        n = half_n;  // ¸üÐÂ n ½øÐÐÏÂÒ»ÂÖ
+        n = half;
     }
 }
 
 int main() {
     long long head, tail, freq;
+    QueryPerformanceFrequency((LARGE_INTEGER*)&freq);
 
     for (int k = 2; k <= n; k *= 2) {
         for (int i = 0; i < k; i++) {
-            a[i] = 1;  // ³õÊ¼»¯Êý×é
+            a[i] = 1;
         }
 
-        QueryPerformanceFrequency((LARGE_INTEGER*)&freq);
         QueryPerformanceCounter((LARGE_INTEGER*)&head);
-
-        // Ê¹ÓÃ SIMD ½øÐÐÇóºÍ
-        recur_simd(a, k);
+        
+        // è°ƒç”¨ä¼˜åŒ–åŽçš„å½’çº¦å‡½æ•°
+        optimized_reduce(a, k);
         sum = a[0];
 
         QueryPerformanceCounter((LARGE_INTEGER*)&tail);
@@ -53,4 +48,3 @@ int main() {
 
     return 0;
 }
-
