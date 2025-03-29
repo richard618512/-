@@ -25,22 +25,17 @@ int main()
 
         QueryPerformanceFrequency((LARGE_INTEGER*)&freq);
         QueryPerformanceCounter((LARGE_INTEGER*)&head);
-       
+       //平凡算法
         for (int i = 0; i < k; i++) {
             for (int j = 0; j < k; j++)
             {
                 sum[i] += a[j][i] * b[j];
             }
         }
-        //?????
-//        for(int j=0;j<k;j++)
-//            for(int i=0;i<k;i++)
-//                sum[i]+=a[j][i]*b[j];
-
-        //??????
-        for(int i=0;i<k;i++)
-            for(int j=0;j<k;j+=2)
-               sum[i]+=a[j][i]*b[j]+a[j+1][i]*b[j+1];
+        //cache优化算法
+        // for(int i=0;i<k;i++)
+        //     for(int j=0;j<k;j+=2)
+        //        sum[i]+=a[j][i]*b[j]+a[j+1][i]*b[j+1];
 //        cout<<(tail-head)*1000.0/freq<<endl;
         QueryPerformanceCounter((LARGE_INTEGER*)&tail);
         cout<<"n="<<k<<" time:"<<(tail-head)*1000.0/freq<<"ms"<<endl;
