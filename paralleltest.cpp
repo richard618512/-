@@ -1,6 +1,5 @@
 #include <iostream>
 #include <windows.h>
-#include <stdlib.h>
 
 using namespace std;
 
@@ -39,7 +38,7 @@ int main()
 //                sum+=a[i];
 //            }
         //?????
-        //??¡¤???
+        //??Â¡Â¤???
 //            int sum1=0,sum2=0;
 //            for(int i=0;i<k;i+=2){
 //                sum1+=a[i];
